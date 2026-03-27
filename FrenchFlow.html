@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FrenchFlow - Learn French Online Free</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .hidden {
+            display: none;
+        }
+        .visible {
+            display: block;
+        }
+        .speak-btn {
+            transition: all 0.2s ease;
+        }
+        .speak-btn:hover {
+            transform: scale(1.1);
+        }
+        .speak-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div id="app"></div>
+
+    <script>
+        // Main App Component
+        class FrenchLearningApp {
+            constructor() {
+                this.state = {
+                    currentPage: 'home',
+                    userLevel: null,
+                    currentLesson: 0,
+                    quizScore: null,
+                    certificates: [],
+                    searchTerm: '',
+                    dictionaryResults: [],
+                    currentQuestion: 0,
+                    selectedAnswers: []
+                };
+
+                this.frenchDictionary = [
+                    // Greetings & Polite
+                    { french: 'Bonjour', english: 'Hello', pronunciation: 'bon-ZHOOR', guide: '(day-time greeting)' },
+                    { french: 'Bonsoir', english: 'Good evening', pronunciation: 'bon-SWAHR', guide: '(after 6 PM)' },
+                    { french: 'Bonne nuit', english: 'Good night', pronunciation: 'bon NWEE', guide: '(before sleep)' },
+                    { french: 'Au revoir', english: 'Goodbye', pronunciation: 'oh ruh-VWAHR', guide: '(standard farewell)' },
+                    { french: 'À bientôt', english: 'See you soon', pronunciation: 'ah bee-en-TOH', guide: '(friendly goodbye)' },
+                    { french: 'À plus tard', english: 'See you later', pronunciation: 'ah plu TAR', guide: '(casual goodbye)' },
+                    { french: 'S\'il vous plaît', english: 'Please (formal)', pronunciation: 'see voo PLEH', guide: '(polite request)' },
+                    { french: 'S\'il te plaît', english: 'Please (informal)', pronunciation: 'see tuh PLEH', guide: '(casual request)' },
+                    { french: 'Merci', english: 'Thank you', pronunciation: 'mehr-SEE', guide: '(basic thanks)' },
+                    { french: 'Merci beaucoup', english: 'Thank you very much', pronunciation: 'mehr-SEE boh-KOO', guide: '(strong thanks)' },
+                    { french: 'De rien', english: 'You\'re welcome', pronunciation: 'duh ree-YEN', guide: '(response to thanks)' },
+                    { french: 'Avec plaisir', english: 'With pleasure', pronunciation: 'ah-VEK pleh-ZIR', guide: '(friendly response)' },
+                    { french: 'Oui', english: 'Yes', pronunciation: 'WEE', guide: '(affirmation)' },
+                    { french: 'Non', english: 'No', pronunciation: 'NOHN', guide: '(negation)' },
+                    { french: 'Je m\'appelle', english: 'My name is', pronunciation: 'zhuh mah-PEL', guide: '(self-introduction)' },
+                    { french: 'Enchanté', english: 'Nice to meet you (m)', pronunciation: 'on-shan-TAY', guide: '(meeting someone)' },
+                    { french: 'Ça va?', english: 'How are you?', pronunciation: 'sah VAH', guide: '(casual greeting)' },
+                    { french: 'Comment allez-vous?', english: 'How are you? (formal)', pronunciation: 'koh-MON tah-lay-VOO', guide: '(formal greeting)' },
+                    { french: 'Très bien', english: 'Very well', pronunciation: 'TREH bee-YEN', guide: '(positive response)' },
+                    { french: 'Bien, merci', english: 'Good, thank you', pronunciation: 'bee-YEN, mehr-SEE', guide: '(polite response)' },
+                    
+                    // Numbers
+                    { french: 'Un', english: 'One', pronunciation: 'UHN', guide: '(1)' },
+                    { french: 'Deux', english: 'Two', pronunciation: 'DUH', guide: '(2)' },
+                    { french: 'Trois', english: 'Three', pronunciation: 'TWAH', guide: '(3)' },
+                    { french: 'Quatre', english: 'Four', pronunciation: 'KAH-truh', guide: '(4)' },
+                    { french: 'Cinq', english: 'Five', pronunciation: 'SANK', guide: '(5)' },
+                    { french: 'Six', english: 'Six', pronunciation: 'SEES', guide: '(6)' },
+                    { french: 'Sept', english: 'Seven', pronunciation: 'SET', guide: '(7)' },
+                    { french: 'Huit', english: 'Eight', pronunciation: 'WEET', guide: '(8)' },
+                    { french: 'Neuf', english: 'Nine', pronunciation: 'NUH', guide: '(9)' },
+                    { french: 'Dix', english: 'Ten', pronunciation: 'DEES', guide: '(10)' },
+                    
+                    // Colors
+                    { french: 'Rouge', english: 'Red', pronunciation: 'ROOZH', guide: '(primary color)' },
+                    { french: 'Bleu', english: 'Blue', pronunciation: 'BLUH', guide: '(primary color)' },
+                    { french: 'Jaune', english: 'Yellow', pronunciation: 'ZHOHN', guide: '(primary color)' },
+                    { french: 'Vert', english: 'Green', pronunciation: 'VEHR', guide: '(common color)' },
+                    { french: 'Noir', english: 'Black', pronunciation: 'NWAHR', guide: '(neutral color)' },
+                    { french: 'Blanc', english: 'White', pronunciation: 'BLAHN', guide: '(neutral color)' },
+                    
+                    // Common Phrases
+                    { french: 'Excusez-moi', english: 'Excuse me (formal)', pronunciation: 'ehk-skew-zay-MWAH', guide: '(getting attention)' },
+                    { french: 'Je ne comprends pas', english: 'I don\'t understand', pronunciation: 'zhuh nuh kohm-PRAHN pah', guide: '(asking for help)' },
+                    { french: 'Où est la toilette?', english: 'Where is the bathroom?', pronunciation: 'OO eh lah twah-LET', guide: '(essential phrase)' },
+                    { french: 'Combien ça coûte?', english: 'How much does it cost?', pronunciation: 'kohm-bee-YEN sah KOOT', guide: '(shopping)' },
+                    
+                    // Food & Drink
+                    { french: 'Eau', english: 'Water', pronunciation: 'OH', guide: '(essential drink)' },
+                    { french: 'Pain', english: 'Bread', pronunciation: 'PAN', guide: '(staple food)' },
+                    { french: 'Fromage', english: 'Cheese', pronunciation: 'froh-MAHZH', guide: '(dairy)' },
+                    { french: 'Café', english: 'Coffee', pronunciation: 'kah-FAY', guide: '(hot drink)' },
+                    { french: 'Vin', english: 'Wine', pronunciation: 'VAN', guide: '(alcoholic drink)' },
+                    
+                    // Family
+                    { french: 'Père', english: 'Father', pronunciation: 'PEHR', guide: '(male parent)' },
+                    { french: 'Mère', english: 'Mother', pronunciation: 'MEHR', guide: '(female parent)' },
+                    { french: 'Frère', english: 'Brother', pronunciation: 'FREHR', guide: '(male sibling)' },
+                    { french: 'Sœur', english: 'Sister', pronunciation: 'SUR', guide: '(female sibling)' },
+                    
+                    // Days
+                    { french: 'Lundi', english: 'Monday', pronunciation: 'lun-DEE', guide: '(day 1)' },
+                    { french: 'Mardi', english: 'Tuesday', pronunciation: 'mar-DEE', guide: '(day 2)' },
+                    { french: 'Mercredi', english: 'Wednesday', pronunciation: 'mehr-kruh-DEE', guide: '(day 3)' },
+                    { french: 'Jeudi', english: 'Thursday', pronunciation: 'zhuh-DEE', guide: '(day 4)' },
+                    { french: 'Vendredi', english: 'Friday', pronunciation: 'vahn-druh-DEE', guide: '(day 5)' },
+                    { french: 'Samedi', english: 'Saturday', pronunciation: 'sahm-DEE', guide: '(day 6)' },
+                    { french: 'Dimanche', english: 'Sunday', pronunciation: 'dee-MANSH', guide: '(day 7)' },
+                ];
+
+                this.lessons = {
+                    basic: [
+                        {
+                            id: 1,
+                            title: 'Greetings & Introductions',
+                            content: [
+                                { phrase: 'Bonjour', pronunciation: 'bon-ZHOOR', translation: 'Hello', context: 'Used during the day' },
+                                { phrase: 'Bonsoir', pronunciation: 'bon-SWAHR', translation: 'Good evening', context: 'Used after 6 PM' },
+                                { phrase: 'Au revoir', pronunciation: 'oh ruh-VWAHR', translation: 'Goodbye', context: 'Standard farewell' },
+                                { phrase: 'À bientôt', pronunciation: 'ah bee-en-TOH', translation: 'See you soon', context: 'Friendly goodbye' },
+                            ]
+                        },
+                        {
+                            id: 2,
+                            title: 'Numbers 0-10',
+                            content: [
+                                { phrase: 'Zéro', pronunciation: 'ZAY-roh', translation: 'Zero', context: '0' },
+                                { phrase: 'Un', pronunciation: 'UHN', translation: 'One', context: '1' },
+                                { phrase: 'Deux', pronunciation: 'DUH', translation: 'Two', context: '2' },
+                                { phrase: 'Trois', pronunciation: 'TWAH', translation: 'Three', context: '3' },
+                                { phrase: 'Quatre', pronunciation: 'KAH-truh', translation: 'Four', context: '4' },
+                                { phrase: 'Cinq', pronunciation: 'SANK', translation: 'Five', context: '5' },
+                            ]
+                        },
+                        {
+                            id: 3,
+                            title: 'Colors',
+                            content: [
+                                { phrase: 'Rouge', pronunciation: 'ROOZH', translation: 'Red', context: 'Primary color' },
+                                { phrase: 'Bleu', pronunciation: 'BLUH', translation: 'Blue', context: 'Primary color' },
+                                { phrase: 'Jaune', pronunciation: 'ZHOHN', translation: 'Yellow', context: 'Primary color' },
+                                { phrase: 'Vert', pronunciation: 'VEHR', translation: 'Green', context: 'Common color' },
+                                { phrase: 'Noir', pronunciation: 'NWAHR', translation: 'Black', context: 'Neutral color' },
+                            ]
+                        },
+                        {
+                            id: 4,
+                            title: 'Family & Common Objects',
+                            content: [
+                                { phrase: 'Père', pronunciation: 'PEHR', translation: 'Father', context: 'Male parent' },
+                                { phrase: 'Mère', pronunciation: 'MEHR', translation: 'Mother', context: 'Female parent' },
+                                { phrase: 'Frère', pronunciation: 'FREHR', translation: 'Brother', context: 'Male sibling' },
+                                { phrase: 'Un livre', pronunciation: 'uhn LEE-vruh', translation: 'A book', context: 'School item' },
+                                { phrase: 'Un stylo', pronunciation: 'uhn stee-LOH', translation: 'A pen', context: 'Writing tool' },
+                            ]
+                        },
+                        {
+                            id: 5,
+                            title: 'Polite Expressions',
+                            content: [
+                                { phrase: 'S\'il vous plaît', pronunciation: 'see voo PLEH', translation: 'Please (formal)', context: 'Formal request' },
+                                { phrase: 'Merci', pronunciation: 'mehr-SEE', translation: 'Thank you', context: 'Basic thanks' },
+                                { phrase: 'De rien', pronunciation: 'duh ree-YEN', translation: 'You\'re welcome', context: 'Response to thanks' },
+                                { phrase: 'Oui', pronunciation: 'WEE', translation: 'Yes', context: 'Affirmation' },
+                                { phrase: 'Non', pronunciation: 'NOHN', translation: 'No', context: 'Negation' },
+                            ]
+                        },
+                    ],
+                    intermediate: [
+                        {
+                            id: 1,
+                            title: 'Present Tense: Être (To Be)',
+                            content: [
+                                { phrase: 'Je suis', pronunciation: 'zhuh SWEE', translation: 'I am', context: 'First person' },
+                                { phrase: 'Tu es', pronunciation: 'too AY', translation: 'You are (informal)', context: 'Second person' },
+                                { phrase: 'Il est', pronunciation: 'eel ay', translation: 'He is', context: 'Third person' },
+                                { phrase: 'Elle est', pronunciation: 'EL ay', translation: 'She is', context: 'Third person' },
+                                { phrase: 'Nous sommes', pronunciation: 'noo SUM', translation: 'We are', context: 'Plural' },
+                            ]
+                        },
+                        {
+                            id: 2,
+                            title: 'Present Tense: Avoir (To Have)',
+                            content: [
+                                { phrase: 'J\'ai', pronunciation: 'zhay', translation: 'I have', context: 'First person' },
+                                { phrase: 'Tu as', pronunciation: 'too AH', translation: 'You have', context: 'Informal' },
+                                { phrase: 'Il a', pronunciation: 'eel AH', translation: 'He has', context: 'Third person' },
+                                { phrase: 'Elle a', pronunciation: 'EL AH', translation: 'She has', context: 'Third person' },
+                                { phrase: 'Nous avons', pronunciation: 'noo zah-VON', translation: 'We have', context: 'Plural' },
+                            ]
+                        },
+                        {
+                            id: 3,
+                            title: 'Food & Restaurant',
+                            content: [
+                                { phrase: 'Je voudrais', pronunciation: 'zhuh VOO-druh', translation: 'I would like', context: 'Polite request' },
+                                { phrase: 'L\'addition', pronunciation: 'lah-dee-SYON', translation: 'The bill', context: 'Restaurant' },
+                                { phrase: 'Eau', pronunciation: 'OH', translation: 'Water', context: 'Drink' },
+                                { phrase: 'Café', pronunciation: 'kah-FAY', translation: 'Coffee', context: 'Hot drink' },
+                                { phrase: 'Pain', pronunciation: 'PAN', translation: 'Bread', context: 'Food' },
+                            ]
+                        },
+                        {
+                            id: 4,
+                            title: 'Past Tense: Simple',
+                            content: [
+                                { phrase: 'J\'ai mangé', pronunciation: 'zhay mahn-ZHAY', translation: 'I ate', context: 'Past action' },
+                                { phrase: 'Tu as bu', pronunciation: 'too AH bew', translation: 'You drank', context: 'Past action' },
+                                { phrase: 'Il a vu', pronunciation: 'eel AH vew', translation: 'He saw', context: 'Past action' },
+                                { phrase: 'Elle a parlé', pronunciation: 'EL AH par-LAY', translation: 'She spoke', context: 'Past action' },
+                                { phrase: 'Nous avons joué', pronunciation: 'noo zah-VON zhoo-AY', translation: 'We played', context: 'Past action' },
+                            ]
+                        },
+                        {
+                            id: 5,
+                            title: 'Common Activities',
+                            content: [
+                                { phrase: 'J\'aime', pronunciation: 'zhem', translation: 'I like', context: 'Preference' },
+                                { phrase: 'Je déteste', pronunciation: 'zhuh day-TEST', translation: 'I hate', context: 'Negative preference' },
+                                { phrase: 'Je joue au football', pronunciation: 'zhuh ZHO oh foo-BOHL', translation: 'I play football', context: 'Sport' },
+                                { phrase: 'Je lis un livre', pronunciation: 'zhuh LEE uhn LEE-vruh', translation: 'I read a book', context: 'Activity' },
+                                { phrase: 'Je regarde la TV', pronunciation: 'zhuh ruh-GARD lah tay-VAY', translation: 'I watch TV', context: 'Leisure' },
+                            ]
+                        },
+                    ],
+                    advanced: [
+                        {
+                            id: 1,
+                            title: 'Conditional Mood',
+                            content: [
+                                { phrase: 'Je serais', pronunciation: 'zhuh suh-RAY', translation: 'I would be', context: 'Conditional' },
+                                { phrase: 'Tu serais', pronunciation: 'too suh-RAY', translation: 'You would be', context: 'Conditional' },
+                                { phrase: 'Il serait', pronunciation: 'eel suh-RAY', translation: 'He would be', context: 'Conditional' },
+                                { phrase: 'Elle serait', pronunciation: 'EL suh-RAY', translation: 'She would be', context: 'Conditional' },
+                                { phrase: 'Nous serions', pronunciation: 'noo suh-REE-ohn', translation: 'We would be', context: 'Conditional' },
+                            ]
+                        },
+                        {
+                            id: 2,
+                            title: 'Business French',
+                            content: [
+                                { phrase: 'Enchanté', pronunciation: 'on-shan-TAY', translation: 'Pleased to meet you', context: 'Formal greeting' },
+                                { phrase: 'Je propose', pronunciation: 'zhuh proh-POHZ', translation: 'I propose', context: 'Business' },
+                                { phrase: 'Le budget', pronunciation: 'luh BEW-zhay', translation: 'The budget', context: 'Finance' },
+                                { phrase: 'La réunion', pronunciation: 'lah ray-oo-NYON', translation: 'The meeting', context: 'Business' },
+                                { phrase: 'Le contrat', pronunciation: 'luh kohn-TRAH', translation: 'The contract', context: 'Legal' },
+                            ]
+                        },
+                        {
+                            id: 3,
+                            title: 'Complex Structures',
+                            content: [
+                                { phrase: 'Si j\'avais su', pronunciation: 'see zhah-VAY sew', translation: 'If I had known', context: 'Hypothetical' },
+                                { phrase: 'J\'aurais pu', pronunciation: 'zho-RAY pew', translation: 'I could have', context: 'Possibility' },
+                                { phrase: 'Il faut que', pronunciation: 'eel FOH kuh', translation: 'It is necessary that', context: 'Necessity' },
+                                { phrase: 'Je voudrais que', pronunciation: 'zhuh VOO-druh kuh', translation: 'I would like that', context: 'Desire' },
+                                { phrase: 'C\'est important que', pronunciation: 'say im-POR-tahn kuh', translation: 'It is important that', context: 'Importance' },
+                            ]
+                        },
+                        {
+                            id: 4,
+                            title: 'Culture & Politics',
+                            content: [
+                                { phrase: 'La culture', pronunciation: 'lah kewl-TEWR', translation: 'The culture', context: 'Society' },
+                                { phrase: 'La politique', pronunciation: 'lah poh-lee-TEEK', translation: 'Politics', context: 'Government' },
+                                { phrase: 'L\'histoire', pronunciation: 'LEE-swahr', translation: 'History', context: 'Past events' },
+                                { phrase: 'L\'économie', pronunciation: 'lay-koh-noh-MEE', translation: 'Economy', context: 'Economics' },
+                                { phrase: 'La société', pronunciation: 'lah soh-see-ay-TAY', translation: 'Society', context: 'Social' },
+                            ]
+                        },
+                        {
+                            id: 5,
+                            title: 'Idioms & Expressions',
+                            content: [
+                                { phrase: 'Avoir un chat dans la gorge', pronunciation: 'ah-VWAH uhn SHAH dahn lah GORZHUH', translation: 'To be hoarse', context: 'Idiom' },
+                                { phrase: 'Tomber dans les pommes', pronunciation: 'tohm-BAY dahn lay POHM', translation: 'To faint', context: 'Idiom' },
+                                { phrase: 'Avoir la tête dans les nuages', pronunciation: 'ah-VWAH lah TET dahn lay NEW-ahzh', translation: 'To have your head in the clouds', context: 'Idiom' },
+                                { phrase: 'C\'est une autre paire de manches', pronunciation: 'say ewn oh-truh PAIR duh MANSH', translation: 'That\'s another kettle of fish', context: 'Idiom' },
+                                { phrase: 'Être sur la même longueur d\'onde', pronunciation: 'ET sur lah MEM lohn-GUR DOND', translation: 'To be on the same wavelength', context: 'Idiom' },
+                            ]
+                        },
+                    ]
+                };
+
+                this.quizzes = {
+                    basic: [
+                        { question: 'What does "Bonjour" mean?', options: ['Goodbye', 'Hello', 'Good evening', 'See you'], correct: 1 },
+                        { question: 'How do you say "Thank you" in French?', options: ['S\'il vous plaît', 'Merci', 'Au revoir', 'Oui'], correct: 1 },
+                        { question: 'What is the French word for "One"?', options: ['Deux', 'Trois', 'Un', 'Quatre'], correct: 2 },
+                        { question: 'Which color is "Bleu"?', options: ['Red', 'Blue', 'Green', 'Yellow'], correct: 1 },
+                        { question: 'What does "Ça va?" mean?', options: ['Where are you?', 'What is your name?', 'How are you?', 'What time is it?'], correct: 2 },
+                        { question: 'How do you say goodbye?', options: ['Bonjour', 'Au revoir', 'Merci', 'Oui'], correct: 1 },
+                        { question: 'What is "Père"?', options: ['Mother', 'Sister', 'Father', 'Brother'], correct: 2 },
+                        { question: 'What is "Deux"?', options: ['Three', 'Two', 'One', 'Four'], correct: 1 },
+                    ],
+                    intermediate: [
+                        { question: 'Conjugate "être" for "I am":', options: ['suis', 'es', 'sont', 'sommes'], correct: 0 },
+                        { question: 'How do you ask for the bill?', options: ['L\'addition', 'Un café', 'L\'eau', 'Du pain'], correct: 0 },
+                        { question: 'What does "J\'ai mangé" mean?', options: ['I eat', 'I will eat', 'I ate', 'I am eating'], correct: 2 },
+                        { question: 'What tense is "J\'ai vu"?', options: ['Present', 'Past', 'Future', 'Conditional'], correct: 1 },
+                        { question: 'What does "Je voudrais" mean?', options: ['I have', 'I want', 'I would like', 'I need'], correct: 2 },
+                        { question: 'How do you say "I like"?', options: ['Je déteste', 'J\'aime', 'Je joue', 'Je lis'], correct: 1 },
+                        { question: '"Je fais du sport" means:', options: ['I read', 'I play', 'I do sports', 'I watch'], correct: 2 },
+                        { question: 'What does "Vin" mean?', options: ['Water', 'Beer', 'Wine', 'Coffee'], correct: 2 },
+                    ],
+                    advanced: [
+                        { question: 'Which is conditional mood?', options: ['Je suis', 'Je serais', 'Je sers', 'Je serai'], correct: 1 },
+                        { question: '"Si j\'avais su" means:', options: ['If I know', 'If I knew', 'If I had known', 'If I will know'], correct: 2 },
+                        { question: 'What structure is "Il faut que"?', options: ['Conditional', 'Subjunctive', 'Imperative', 'Passive'], correct: 1 },
+                        { question: '"J\'aurais pu" means:', options: ['I can', 'I could', 'I could have', 'I will can'], correct: 2 },
+                        { question: 'Business: "Enchanté" means:', options: ['Tired', 'Pleased', 'Confused', 'Happy'], correct: 1 },
+                        { question: '"Tomber dans les pommes" means:', options: ['Eat apples', 'Fall down', 'To faint', 'Pick apples'], correct: 2 },
+                        { question: 'What does "La politique" mean?', options: ['Police', 'Politics', 'Polite', 'Polish'], correct: 1 },
+                        { question: '"Avoir un chat dans la gorge" means:', options: ['Have a cat', 'Be hoarse', 'Cough', 'Drink water'], correct: 1 },
+                    ]
+                };
+            }
+
+            speakText(text, lang = 'fr-FR') {
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = lang;
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1;
+                    speechSynthesis.cancel();
+                    speechSynthesis.speak(utterance);
+                } else {
+                    alert('Speech synthesis not supported in your browser');
+                }
+            }
+
+            searchDictionary() {
+                if (this.state.searchTerm.trim() === '') {
+                    this.state.dictionaryResults = [];
+                    return;
+                }
+                const results = this.frenchDictionary.filter(entry =>
+                    entry.french.toLowerCase().includes(this.state.searchTerm.toLowerCase()) ||
+                    entry.english.toLowerCase().includes(this.state.searchTerm.toLowerCase())
+                );
+                this.state.dictionaryResults = results;
+                this.render();
+            }
+
+            handleQuizSubmit(score) {
+                this.state.quizScore = score;
+                if (score >= 6) {
+                    this.state.certificates.push({
+                        level: this.state.userLevel,
+                        date: new Date().toLocaleDateString()
+                    });
+                }
+            }
+
+            renderHome() {
+                const statsHtml = `
+                    <div class="grid grid-cols-3 gap-8 mb-12">
+                        <div class="bg-white rounded-lg shadow-lg p-6">
+                            <div class="text-4xl font-bold text-blue-600 mb-2">25</div>
+                            <p class="text-gray-600">Lessons</p>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-lg p-6">
+                            <div class="text-4xl font-bold text-purple-600 mb-2">70+</div>
+                            <p class="text-gray-600">Dictionary Words</p>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-lg p-6">
+                            <div class="text-4xl font-bold text-pink-600 mb-2">100%</div>
+                            <p class="text-gray-600">With Audio</p>
+                        </div>
+                    </div>
+                `;
+
+                const levelSelectHtml = `
+                    <h3 class="text-3xl font-bold text-gray-900 mb-8">Choose Your Level</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div onclick="app.setState({currentPage: 'lessons', userLevel: 'basic'})" class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all cursor-pointer p-8 border-2 border-blue-200 hover:border-blue-500">
+                            <div class="text-5xl mb-4">🌱</div>
+                            <h4 class="text-2xl font-bold text-gray-800 mb-2">Basic</h4>
+                            <p class="text-gray-600 mb-4">Perfect for beginners. Learn greetings, numbers, colors, and daily phrases.</p>
+                            <div class="text-sm text-blue-600 font-semibold">5 Lessons • 8 Quiz Questions</div>
+                        </div>
+                        <div onclick="app.setState({currentPage: 'lessons', userLevel: 'intermediate'})" class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all cursor-pointer p-8 border-2 border-purple-200 hover:border-purple-500 transform hover:-translate-y-1">
+                            <div class="text-5xl mb-4">🚀</div>
+                            <h4 class="text-2xl font-bold text-gray-800 mb-2">Intermediate</h4>
+                            <p class="text-gray-600 mb-4">Build on basics. Master verb tenses, food, and real conversations.</p>
+                            <div class="text-sm text-purple-600 font-semibold">5 Lessons • 8 Quiz Questions</div>
+                        </div>
+                        <div onclick="app.setState({currentPage: 'lessons', userLevel: 'advanced'})" class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all cursor-pointer p-8 border-2 border-pink-200 hover:border-pink-500">
+                            <div class="text-5xl mb-4">👑</div>
+                            <h4 class="text-2xl font-bold text-gray-800 mb-2">Advanced</h4>
+                            <p class="text-gray-600 mb-4">Reach fluency. Business French, subjunctive, idioms, and culture.</p>
+                            <div class="text-sm text-pink-600 font-semibold">5 Lessons • 8 Quiz Questions</div>
+                        </div>
+                    </div>
+                `;
+
+                const dictionaryHtml = `
+                    <div class="mt-16 bg-white rounded-xl shadow-lg p-8">
+                        <h3 class="text-3xl font-bold text-gray-900 mb-6">🔊 French Dictionary</h3>
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" id="searchInput" placeholder="Search French or English words..." class="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" value="${this.state.searchTerm}" />
+                            <button onclick="app.searchDictionary()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">Search</button>
+                        </div>
+                        <div id="dictionaryResults"></div>
+                    </div>
+                `;
+
+                const certificatesHtml = this.state.certificates.length > 0 ? `
+                    <div class="mt-16 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl shadow-lg p-8">
+                        <h3 class="text-3xl font-bold text-gray-900 mb-6">🏆 Your Certificates</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            ${this.state.certificates.map(cert => `
+                                <div class="bg-white rounded-lg shadow-md p-6 border-2 border-yellow-400 text-center">
+                                    <p style="font-size: 2rem;">🏅</p>
+                                    <p class="font-bold text-gray-800 capitalize">${cert.level} Level</p>
+                                    <p class="text-sm text-gray-600">Completed: ${cert.date}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : '';
+
+                return `
+                    <nav class="bg-white shadow-md">
+                        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <h1 class="text-2xl font-bold text-gray-800">🌍 FrenchFlow</h1>
+                            </div>
+                            <p class="text-gray-600">🎙️ Learn French with Pronunciation</p>
+                        </div>
+                    </nav>
+                    <div class="max-w-7xl mx-auto px-4 py-16 text-center">
+                        <h2 class="text-5xl font-bold text-gray-900 mb-4">Welcome to FrenchFlow</h2>
+                        <p class="text-xl text-gray-600 mb-2">Learn French completely free!</p>
+                        <p class="text-lg text-blue-600 font-semibold mb-8">🔊 Click speaker icons to hear pronunciations!</p>
+                        ${statsHtml}
+                        ${levelSelectHtml}
+                        ${dictionaryHtml}
+                        ${certificatesHtml}
+                    </div>
+                `;
+            }
+
+            renderLessons() {
+                const currentLessonData = this.lessons[this.state.userLevel][this.state.currentLesson];
+                const totalLessons = this.lessons[this.state.userLevel].length;
+                const progressPercent = ((this.state.currentLesson + 1) / totalLessons) * 100;
+
+                if (this.state.quizScore === null) {
+                    return `
+                        <nav class="bg-white shadow-md">
+                            <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                                <button onclick="app.setState({currentPage: 'home', userLevel: null, quizScore: null, currentLesson: 0})" class="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold">⬅️ Back to Home</button>
+                                <h1 class="text-2xl font-bold text-gray-800">${this.state.userLevel.charAt(0).toUpperCase() + this.state.userLevel.slice(1)} Level</h1>
+                                <div></div>
+                            </div>
+                        </nav>
+                        <div class="max-w-7xl mx-auto px-4 py-8">
+                            <div class="mb-8">
+                                <p class="text-sm font-semibold text-gray-600 mb-2">Lesson ${this.state.currentLesson + 1} of ${totalLessons}</p>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full" style="width: ${progressPercent}%"></div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <div class="lg:col-span-2">
+                                    <div class="bg-white rounded-xl shadow-lg p-8">
+                                        <h2 class="text-4xl font-bold text-gray-900 mb-6">${currentLessonData.title}</h2>
+                                        <div class="space-y-6">
+                                            ${currentLessonData.content.map((item, idx) => `
+                                                <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border-l-4 border-blue-500">
+                                                    <div class="flex items-start justify-between mb-3">
+                                                        <div class="flex-1">
+                                                            <div class="flex items-center gap-3 mb-2">
+                                                                <p class="text-2xl font-bold text-blue-600">${item.phrase}</p>
+                                                                <button onclick="app.speakText('${item.phrase}')" class="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition speak-btn">🔊</button>
+                                                            </div>
+                                                            <p class="text-sm text-gray-600 font-mono bg-white px-3 py-1 rounded inline-block mb-2">📝 ${item.pronunciation}</p>
+                                                            <p class="text-lg text-gray-700 font-semibold mt-2">${item.translation}</p>
+                                                        </div>
+                                                    </div>
+                                                    <p class="text-sm text-gray-600 italic">Context: ${item.context}</p>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                        <div class="flex gap-4 mt-8">
+                                            <button onclick="app.prevLesson()" ${this.state.currentLesson === 0 ? 'disabled style="opacity: 0.5;"' : ''} class="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">⬅️ Previous</button>
+                                            ${this.state.currentLesson === totalLessons - 1 ?
+                                                `<button onclick="app.setState({currentPage: 'quiz', currentQuestion: 0, selectedAnswers: []})" class="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg transition font-semibold">Take Quiz ➡️</button>`
+                                                : `<button onclick="app.nextLesson()" class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:shadow-lg transition font-semibold">Next Lesson ➡️</button>`
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded-xl shadow-lg p-6 h-fit">
+                                    <h3 class="text-xl font-bold text-gray-900 mb-4">Key Words 🎙️</h3>
+                                    <div class="space-y-3">
+                                        ${currentLessonData.content.map((item, idx) => `
+                                            <div class="bg-blue-50 p-3 rounded-lg border-l-2 border-blue-500">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <div class="flex-1">
+                                                        <p class="font-semibold text-blue-600">${item.phrase}</p>
+                                                        <p class="text-xs text-gray-500 font-mono">${item.pronunciation}</p>
+                                                        <p class="text-sm text-gray-600">${item.translation}</p>
+                                                    </div>
+                                                    <button onclick="app.speakText('${item.phrase}')" class="bg-blue-600 text-white p-1 rounded hover:bg-blue-700 transition speak-btn flex-shrink-0">🔊</button>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const passed = this.state.quizScore >= 6;
+                    return `
+                        <nav class="bg-white shadow-md">
+                            <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                                <h1 class="text-2xl font-bold text-gray-800">Quiz Results</h1>
+                            </div>
+                        </nav>
+                        <div class="max-w-7xl mx-auto px-4 py-16">
+                            <div class="bg-white rounded-xl shadow-lg p-12 text-center max-w-2xl mx-auto">
+                                ${passed ? `
+                                    <p style="font-size: 3rem;">✅</p>
+                                    <h2 class="text-4xl font-bold text-gray-900 mb-4">Excellent! 🎉</h2>
+                                    <p class="text-xl text-gray-600 mb-2">Your Score: ${this.state.quizScore}/8</p>
+                                    <p class="text-gray-600 mb-8">You've passed and earned your certificate!</p>
+                                    <div class="bg-gradient-to-r from-yellow-100 to-orange-100 rounded-lg p-8 mb-8 border-2 border-yellow-400">
+                                        <p style="font-size: 3rem;">🏅</p>
+                                        <p class="text-2xl font-bold text-gray-800 capitalize mb-2">${this.state.userLevel} Level Certificate</p>
+                                        <p class="text-gray-600">Congratulations!</p>
+                                    </div>
+                                ` : `
+                                    <p style="font-size: 3rem;">⚠️</p>
+                                    <h2 class="text-4xl font-bold text-gray-900 mb-4">Keep Trying! 💪</h2>
+                                    <p class="text-xl text-gray-600 mb-2">Your Score: ${this.state.quizScore}/8</p>
+                                    <p class="text-gray-600 mb-8">You need 6 or more correct answers. Review and try again!</p>
+                                `}
+                                <div class="flex gap-4">
+                                    <button onclick="app.setState({currentPage: 'home', userLevel: null, quizScore: null, currentLesson: 0})" class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold">Go Home</button>
+                                    <button onclick="app.setState({quizScore: null, currentLesson: 0})" class="flex-1 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-semibold">Review Lessons</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            renderQuiz() {
+                const quiz = this.quizzes[this.state.userLevel];
+                const currentQuestion = quiz[this.state.currentQuestion];
+                const totalQuestions = quiz.length;
+                const progressPercent = ((this.state.currentQuestion + 1) / totalQuestions) * 100;
+
+                return `
+                    <nav class="bg-white shadow-md">
+                        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                            <h1 class="text-2xl font-bold text-gray-800">Quiz Time! 📝</h1>
+                            <p class="text-gray-600">Question ${this.state.currentQuestion + 1} of ${totalQuestions}</p>
+                        </div>
+                    </nav>
+                    <div class="max-w-4xl mx-auto px-4 py-8">
+                        <div class="mb-8">
+                            <div class="w-full bg-gray-200 rounded-full h-3">
+                                <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full" style="width: ${progressPercent}%"></div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                            <h2 class="text-3xl font-bold text-gray-900 mb-8">${currentQuestion.question}</h2>
+                            <div class="space-y-3">
+                                ${currentQuestion.options.map((option, idx) => `
+                                    <button onclick="app.selectAnswer(${idx})" class="w-full p-4 text-left rounded-lg border-2 transition ${
+                                        this.state.selectedAnswers[this.state.currentQuestion] === idx
+                                            ? 'border-blue-500 bg-blue-50'
+                                            : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+                                    }">
+                                        <span class="font-semibold text-gray-800">${option}</span>
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <button onclick="app.prevQuestion()" ${this.state.currentQuestion === 0 ? 'disabled style="opacity: 0.5;"' : ''} class="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">⬅️ Previous</button>
+                            ${this.state.currentQuestion === totalQuestions - 1 ?
+                                `<button onclick="app.submitQuiz()" class="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg transition font-semibold">Submit Quiz</button>`
+                                : `<button onclick="app.nextQuestion()" class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:shadow-lg transition font-semibold">Next Question ➡️</button>`
+                            }
+                        </div>
+                    </div>
+                `;
+            }
+
+            setState(newState) {
+                this.state = { ...this.state, ...newState };
+                if (newState.searchTerm !== undefined) {
+                    document.getElementById('searchInput').value = newState.searchTerm;
+                }
+                this.render();
+            }
+
+            nextLesson() {
+                this.setState({ currentLesson: this.state.currentLesson + 1 });
+            }
+
+            prevLesson() {
+                this.setState({ currentLesson: Math.max(0, this.state.currentLesson - 1) });
+            }
+
+            nextQuestion() {
+                this.setState({ currentQuestion: this.state.currentQuestion + 1 });
+            }
+
+            prevQuestion() {
+                this.setState({ currentQuestion: Math.max(0, this.state.currentQuestion - 1) });
+            }
+
+            selectAnswer(index) {
+                const newAnswers = [...this.state.selectedAnswers];
+                newAnswers[this.state.currentQuestion] = index;
+                this.setState({ selectedAnswers: newAnswers });
+            }
+
+            submitQuiz() {
+                const quiz = this.quizzes[this.state.userLevel];
+                let score = 0;
+                this.state.selectedAnswers.forEach((answer, idx) => {
+                    if (answer === quiz[idx].correct) score++;
+                });
+                this.handleQuizSubmit(score);
+                this.setState({ currentPage: 'lessons' });
+            }
+
+            render() {
+                const app = document.getElementById('app');
+                let content = '';
+
+                switch (this.state.currentPage) {
+                    case 'home':
+                        content = this.renderHome();
+                        break;
+                    case 'lessons':
+                        content = this.renderLessons();
+                        break;
+                    case 'quiz':
+                        content = this.renderQuiz();
+                        break;
+                }
+
+                app.innerHTML = content;
+
+                // Setup search input listener if on home page
+                if (this.state.currentPage === 'home') {
+                    const searchInput = document.getElementById('searchInput');
+                    if (searchInput) {
+                        searchInput.addEventListener('input', (e) => {
+                            this.setState({ searchTerm: e.target.value });
+                            this.searchDictionary();
+                        });
+
+                        // Render dictionary results
+                        const resultsDiv = document.getElementById('dictionaryResults');
+                        if (this.state.dictionaryResults.length > 0) {
+                            resultsDiv.innerHTML = `
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                    ${this.state.dictionaryResults.map((entry, idx) => `
+                                        <div class="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500 hover:shadow-md transition">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div>
+                                                    <span class="text-2xl font-bold text-blue-600">${entry.french}</span>
+                                                    <p class="text-gray-700 font-semibold">${entry.english}</p>
+                                                </div>
+                                                <button onclick="app.speakText('${entry.french}')" class="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition ml-2 speak-btn">🔊</button>
+                                            </div>
+                                            <p class="text-sm text-gray-700 font-mono bg-white p-2 rounded">📝 ${entry.pronunciation}</p>
+                                            <p class="text-xs text-gray-500 italic mt-2">${entry.guide}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+                        } else if (this.state.searchTerm && this.state.dictionaryResults.length === 0) {
+                            resultsDiv.innerHTML = '<p class="text-gray-500 mt-4">No words found. Try a different search!</p>';
+                        } else {
+                            resultsDiv.innerHTML = '';
+                        }
+                    }
+                }
+            }
+        }
+
+        // Initialize app
+        const app = new FrenchLearningApp();
+        app.render();
+    </script>
+</body>
+</html>
